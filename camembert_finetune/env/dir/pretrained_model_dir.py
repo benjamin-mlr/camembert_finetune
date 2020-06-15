@@ -1,0 +1,235 @@
+import os
+from camembert_finetune.env.imports import os, OrderedDict
+#from camembert_finetune.env.dir.project_directories import BERT_MODELS_DIRECTORY
+
+#assert os.path.isdir(BERT_MODELS_DIRECTORY)#, "ERROR : {} does not exist : it should host the bert models tar.gz and vocabulary ".format(BERT_MODELS_DIRECTORY)
+
+
+BERT_MODEL_DIC = {"bert-cased-multitask": {#"vocab": os.path.join(BERT_MODELS_DIRECTORY, "bert-base-cased-vocab.txt"),
+                                           #"model": os.path.join(BERT_MODELS_DIRECTORY, "bert-cased-multitask.tar.gz"),
+                                           "vocab_size": 28996,
+                                           "state_dict_mapping": {"bert": "encoder", "cls": "head.mlm"},
+                                           },
+                  "bert-cased": {
+
+                                 "vocab_size": 28996,
+                                 "state_dict_mapping": {"bert": "encoder", "cls": "head.mlm"},
+                                 "encoder": "BertModel",
+                                 "tokenizer": "BertTokenizer",
+                                 },
+                  "random":  {
+                     # "vocab": os.path.join(BERT_MODELS_DIRECTORY, "bert-base-cased-vocab.txt"),
+                      "model": None,
+                      "vocab_size": 28996,
+                              },
+                  "bert_base_multilingual_cased": {
+                      "encoder": "BertModel",
+                      "tokenizer": "BertTokenizer",
+                     # "vocab": os.path.join(BERT_MODELS_DIRECTORY, "bert-base-multilingual-cased-vocab.txt"),
+                     # "model": os.path.join(BERT_MODELS_DIRECTORY, "bert-base-multilingual-cased"),#.tar.gz),
+                      "vocab_size": 119547,
+                      "state_dict_mapping": {"bert": "encoder", "cls": "head.mlm"},
+
+                  },
+                  "camembert-cased-1": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"camembert.base.hugs", "sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY, "camembert.base.hugs"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"}
+                  },
+
+                  "camembert-cased-oscar-wwm-107075step": {
+                     # "vocab": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_oscar_wwm_step107075-hugs","sentencepiece.bpe.model"),
+                     # "model": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_oscar_wwm_step107075-hugs"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+                  "camembert-cased-ccnet-wwm-360000step": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_ccnet_wwm_step360000-hugs" "sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_ccnet_wwm_step360000-hugs"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+                  
+                      "camembert-cased-oscar-wpm-101029step": {
+                    #  "vocab": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_oscar_step101029-hugs", "sentencepiece.bpe.model"),
+                    #  "model": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_oscar_step101029-hugs"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+
+                  "camembert-cased-ccnet-_ccnet_wwm_total125000_complete_step100346": {
+                     # "vocab": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_ccnet_wwm_total125000_complete_doc_step101402.pytorch","sentencepiece.bpe.model"),
+                     # "model": os.path.join(BERT_MODELS_DIRECTORY, "roberta_base_ccnet_wwm_total125000_complete_doc_step101402.pytorch"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+
+                  "roberta_base_ccnet_wwm_total1000000_complete_lr0.0007_step448000": {
+                     # "vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_wwm_total1000000_complete_lr0.0007_step448000", "sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_wwm_total1000000_complete_lr0.0007_step448000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+
+
+
+                "roberta_base_ccnet_4gb_wwm_total125000_complete_lr0.0007_step123813": {
+                    #  "vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_4gb_wwm_total125000_complete_lr0.0007_step123813","sentencepiece.bpe.model"),
+                     # "model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_4gb_wwm_total125000_complete_lr0.0007_step123813"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+                "camembert_ccnet_4gb_100k": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_4gb_wwm_total125000_complete_lr0.0007_step100000","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_4gb_wwm_total125000_complete_lr0.0007_step100000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+
+                  },
+                  "camembert_wiki_4gb": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_frwiki_pedro_wwm_total125000_complete_lr0.0007_step100000","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_frwiki_pedro_wwm_total125000_complete_lr0.0007_step100000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+
+                  },
+                  "camembert_oscar_4gb": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_oscar_4gb_wwm_total125000_complete_lr0.0007_step100000","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_oscar_4gb_wwm_total125000_complete_lr0.0007_step100000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+
+                  },
+
+                  "roberta_base_ccnet_16gb_wwm_total125000_complete_lr0.0007_step124000": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_16gb_wwm_total125000_complete_lr0.0007_step124000","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_ccnet_16gb_wwm_total125000_complete_lr0.0007_step124000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+
+                "roberta_base_oscar_100mb_wwm_total125000_complete_lr0.0007_step15600":{
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_oscar_100mb_wwm_total125000_complete_lr0.0007_step15600","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_base_oscar_100mb_wwm_total125000_complete_lr0.0007_step15600"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                    },
+
+                  "roberta_large_ccnet_wwm_total125000_complete_lr0.0005_step125000": {
+                      #"vocab": os.path.join(BERT_MODELS_DIRECTORY,"roberta_large_ccnet_wwm_total125000_complete_lr0.0005_step125000","sentencepiece.bpe.model"),
+                      #"model": os.path.join(BERT_MODELS_DIRECTORY,"roberta_large_ccnet_wwm_total125000_complete_lr0.0005_step125000"),
+                      "vocab_size": 32005,
+                      "encoder": "RobertaModel",
+                      "tokenizer": "CamembertTokenizer",
+                      "wordpiece_flag": "▁",
+                      "flag_is_first_token": True,
+                      "state_dict_mapping": {"roberta": "encoder",  # "lm_head":,
+                                             "lm_head.decoder": "head.mlm.predictions.decoder",
+                                             "lm_head.dense": "head.mlm.predictions.transform.dense",
+                                             "lm_head.bias": "head.mlm.predictions.bias",
+                                             "lm_head.layer_norm": "head.mlm.predictions.transform.LayerNorm"},
+                  },
+
+
+
+                  }
+
+
+#DIR_2_STAT_MAPPING = OrderedDict([(BERT_MODEL_DIC[key]["model"], BERT_MODEL_DIC[key].get("state_dict_mapping")) for key in BERT_MODEL_DIC])
