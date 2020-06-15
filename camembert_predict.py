@@ -235,7 +235,7 @@ def predict(args):
                               gold_file_name=args.gold_file, verbose=2 if args.score_details else 1)
                 print("Overall F1 score : ", f1)
             else:
-                raise(Exception("not supported"))
+                raise(Exception("not supported "))
         else:
             assert args.score_details, "ERROR : --gold_file should be provided if --score_details 1"
 
