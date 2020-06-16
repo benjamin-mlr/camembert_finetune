@@ -8,7 +8,7 @@ It is now available on Hugging Face in 6 different versions with varying number 
 
 For further information
 
-## Setting up camembert_finetuned library 
+## Setting up 
 
 
 `git clone https://github.com/benjamin-mlr/camembert_finetune.git`
@@ -20,7 +20,7 @@ For further information
 `source activate camembert_finetune` 
 
 
-## Tuned Models
+## Fine-tuned Models
 
 This project was partially built using a fork of the [transformers](https://huggingface.co/transformers) library 
 
@@ -46,7 +46,7 @@ This project was partially built using a fork of the [transformers](https://hugg
 `tar -xzvf camembert_finetuned_ner.tar.gz`
  
 
-## Using Tuned models 
+## Using Fine-tuned models 
 
 ### Interact with Camembert 
 
