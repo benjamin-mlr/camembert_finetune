@@ -36,7 +36,7 @@ This project was partially built using a fork of the [transformers](https://hugg
 #### POS
 
 `cd ./camembert_finetune/checkpoints`   
-`wget dl.fbaipublicfiles.com/camembert/camembert_finetuned_pos.tar.gz   
+`wget dl.fbaipublicfiles.com/camembert/camembert_finetuned_pos.tar.gz`     
 `tar -xzvf camembert_finetuned_pos.tar.gz`
 
 #### NER 
