@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Compatible with Python 2.7 and 3.2+, can be used either as a module
 # or a standalone executable.
@@ -16,6 +16,11 @@
 # - [12 Apr 2018] Version 0.9: Initial release.
 # - [19 Apr 2018] Version 1.0: Fix bug in MLAS (duplicate entries in functional_children).
 #                              Add --counts option.
+# - [02 May 2018] Version 1.1: When removing spaces to match gold and system characters,
+#                              consider all Unicode characters of category Zs instead of
+#                              just ASCII space.
+# - [25 Jun 2018] Version 1.2: Use python3 in the she-bang (instead of python).
+#                              In Python2, make the whole computation use `unicode` strings.
 
 # Command line usage
 # ------------------
@@ -90,6 +95,7 @@ from __future__ import print_function
 import argparse
 import io
 import sys
+import unicodedata
 import unittest
 
 # CoNLL-U column names
@@ -116,6 +122,13 @@ UNIVERSAL_FEATURES = {
 # UD Error is used when raising exceptions in this module
 class UDError(Exception):
     pass
+
+# Conversion methods handling `str` <-> `unicode` conversions in Python2
+def _decode(text):
+    return text if sys.version_info[0] >= 3 or not isinstance(text, str) else text.decode("utf-8")
+
+def _encode(text):
+    return text if sys.version_info[0] >= 3 or not isinstance(text, unicode) else text.encode("utf-8")
 
 # Load given CoNLL-U file into internal representation
 def load_conllu(file):
@@ -146,11 +159,6 @@ def load_conllu(file):
             # is_multiword==True means that this word is part of a multi-word token.
             # In that case, self.span marks the span of the whole multi-word token.
             self.is_multiword = is_multiword
-            
-            self.cycle = False
-            self.multiple_root = False
-            self.no_zero = False
-            
             # Reference to the UDWord instance representing the HEAD (or None if root).
             self.parent = None
             # List of references to UDWord instances representing functional-deprel children.
@@ -168,12 +176,11 @@ def load_conllu(file):
 
     # Load the CoNLL-U file
     index, sentence_start = 0, None
-    cycle = 0
     while True:
         line = file.readline()
         if not line:
             break
-        line = line.rstrip("\r\n")
+        line = _decode(line.rstrip("\r\n"))
 
         # Handle sentence start boundaries
         if sentence_start is None:
@@ -186,34 +193,20 @@ def load_conllu(file):
         if not line:
             # Add parent and children UDWord links and check there are no cycles
             def process_word(word):
-                #print("WORD.PARENT", word.columns, word.parent)
                 if word.parent == "remapping":
-                    try:
-                        raise UDError(f"There is a cycle in a sentence word {word.columns} parent {word.parent} parent of parent  ")
-                    except Exception as e:
-                        print(e)
-                        word.cycle = True
+                    raise UDError("There is a cycle in a sentence")
                 if word.parent is None:
                     head = int(word.columns[HEAD])
                     if head < 0 or head > len(ud.words) - sentence_start:
-                        try:
-                            raise UDError("HEAD '{}' points outside of the sentence".format(word.columns[HEAD]))
-                        except Exception as e:
-                            raise(e)
-
+                        raise UDError("HEAD '{}' points outside of the sentence".format(_encode(word.columns[HEAD])))
                     if head:
                         parent = ud.words[sentence_start + head - 1]
-                        parent = ud.words[0]
                         word.parent = "remapping"
                         process_word(parent)
                         word.parent = parent
 
-
             for word in ud.words[sentence_start:]:
                 process_word(word)
-
-                #print("ROOT", word.multiple_root)
-                #print("ZERO", word.no_zero)
             # func_children cannot be assigned within process_word
             # because it is called recursively and may result in adding one child twice.
             for word in ud.words[sentence_start:]:
@@ -222,11 +215,7 @@ def load_conllu(file):
 
             # Check there is a single root node
             if len([word for word in ud.words[sentence_start:] if word.parent is None]) != 1:
-                try:
-                    raise UDError(f"There are multiple roots in a sentence !!")
-                except Exception as e:
-                    print(e)
-                    #word.multiple_root = True
+                raise UDError("There are multiple roots in a sentence")
 
             # End the sentence
             ud.sentences[-1].end = index
@@ -236,18 +225,22 @@ def load_conllu(file):
         # Read next token/word
         columns = line.split("\t")
         if len(columns) != 10:
-            raise UDError("The CoNLL-U line does not contain 10 tab-separated columns: '{}'".format(line))
+            raise UDError("The CoNLL-U line does not contain 10 tab-separated columns: '{}'".format(_encode(line)))
 
         # Skip empty nodes
         if "." in columns[ID]:
             continue
 
         # Delete spaces from FORM, so gold.characters == system.characters
-        # even if one of them tokenizes the space.
-        columns[FORM] = columns[FORM].replace(" ", "")
+        # even if one of them tokenizes the space. Use any Unicode character
+        # with category Zs.
+        columns[FORM] = "".join(filter(lambda c: unicodedata.category(c) != "Zs", columns[FORM]))
         if not columns[FORM]:
             raise UDError("There is an empty FORM in the CoNLL-U file")
 
+        
+        #if "-" in columns[ID]:
+        #    continue
         # Save token
         ud.characters.extend(columns[FORM])
         ud.tokens.append(UDSpan(index, index + len(columns[FORM])))
@@ -255,33 +248,33 @@ def load_conllu(file):
 
         # Handle multi-word tokens to save word(s)
         if "-" in columns[ID]:
+            
             try:
                 start, end = map(int, columns[ID].split("-"))
             except:
-                raise UDError("Cannot parse multi-word token ID '{}'".format(columns[ID]))
+                raise UDError("Cannot parse multi-word token ID '{}'".format(_encode(columns[ID])))
 
             for _ in range(start, end + 1):
-                word_line = file.readline().rstrip("\r\n")
+                word_line = _decode(file.readline().rstrip("\r\n"))
                 word_columns = word_line.split("\t")
                 if len(word_columns) != 10:
-                    raise UDError("The CoNLL-U line does not contain 10 tab-separated columns: '{}'".format(word_line))
+                    raise UDError("The CoNLL-U line does not contain 10 tab-separated columns: '{}'".format(_encode(word_line)))
                 ud.words.append(UDWord(ud.tokens[-1], word_columns, is_multiword=True))
         # Basic tokens/words
         else:
             try:
                 word_id = int(columns[ID])
             except:
-                raise UDError("Cannot parse word ID '{}'".format(columns[ID]))
+                raise UDError("Cannot parse word ID '{}'".format(_encode(columns[ID])))
             if word_id != len(ud.words) - sentence_start + 1:
-                raise UDError("Incorrect word ID '{}' for word '{}', expected '{}'".format(columns[ID], columns[FORM], len(ud.words) - sentence_start + 1))
-
+                raise UDError("Incorrect word ID '{}' for word '{}', expected '{}'".format(
+                    _encode(columns[ID]), _encode(columns[FORM]), len(ud.words) - sentence_start + 1))
             try:
                 head_id = int(columns[HEAD])
             except:
-                raise UDError("Cannot parse HEAD '{}'".format(columns[HEAD]))
+                raise UDError("Cannot parse HEAD '{}'".format(_encode(columns[HEAD])))
             if head_id < 0:
                 raise UDError("HEAD cannot be negative")
-
             ud.words.append(UDWord(ud.tokens[-1], columns, is_multiword=False))
 
     if sentence_start is not None:
@@ -314,11 +307,6 @@ def evaluate(gold_ud, system_ud):
         def append_aligned_words(self, gold_word, system_word):
             self.matched_words.append(AlignmentWord(gold_word, system_word))
             self.matched_words_map[system_word] = gold_word
-
-    def lower(text):
-        if sys.version_info < (3, 0) and isinstance(text, str):
-            return text.decode("utf-8").lower()
-        return text.lower()
 
     def spans_score(gold_spans, system_spans):
         correct, gi, si = 0, 0, 0
@@ -403,7 +391,7 @@ def evaluate(gold_ud, system_ud):
         lcs = [[0] * (si - ss) for i in range(gi - gs)]
         for g in reversed(range(gi - gs)):
             for s in reversed(range(si - ss)):
-                if lower(gold_words[gs + g].columns[FORM]) == lower(system_words[ss + s].columns[FORM]):
+                if gold_words[gs + g].columns[FORM].lower() == system_words[ss + s].columns[FORM].lower():
                     lcs[g][s] = 1 + (lcs[g+1][s+1] if g+1 < gi-gs and s+1 < si-ss else 0)
                 lcs[g][s] = max(lcs[g][s], lcs[g+1][s] if g+1 < gi-gs else 0)
                 lcs[g][s] = max(lcs[g][s], lcs[g][s+1] if s+1 < si-ss else 0)
@@ -424,7 +412,7 @@ def evaluate(gold_ud, system_ud):
                     # Store aligned words
                     s, g = 0, 0
                     while g < gi - gs and s < si - ss:
-                        if lower(gold_words[gs + g].columns[FORM]) == lower(system_words[ss + s].columns[FORM]):
+                        if gold_words[gs + g].columns[FORM].lower() == system_words[ss + s].columns[FORM].lower():
                             alignment.append_aligned_words(gold_words[gs+g], system_words[ss+s])
                             g += 1
                             s += 1
@@ -451,14 +439,15 @@ def evaluate(gold_ud, system_ud):
         while index < len(gold_ud.characters) and index < len(system_ud.characters) and \
                 gold_ud.characters[index] == system_ud.characters[index]:
             index += 1
+        
+            
+        raise UDError(
+            "The concatenation of tokens in gold file and in system file differ!\n" +
+            "First 20 differing characters in gold file: '{}' and system file: '{}'".format(
+                "".join(map(_encode, gold_ud.characters[index:index + 20])),
+                "".join(map(_encode, system_ud.characters[index:index + 20]))
+            ))
 
-        #raise UDError(
-        #    "The concatenation of tokens in gold file and in system file differ!\n" +
-        #    "First 20 differing characters in gold file: '{}' and system file: '{}'".format(
-        #        "".join(gold_ud.characters[index:index + 20]),
-        #        "".join(system_ud.characters[index:index + 20])
-        #    )
-        #)
 
     # Align words
     alignment = align_words(gold_ud.words, system_ud.words)

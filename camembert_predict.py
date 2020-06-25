@@ -6,7 +6,7 @@ from camembert_finetune.predict.prediction_pipe import load_tok_model_for_predic
 from camembert_finetune.model.settings import TASKS_PARAMETER
 from camembert_finetune.io_.data_iterator import readers_load, data_gen_multi_task_sampling_batch
 from camembert_finetune.io_.bert_iterators_tools.get_bpe_labels import get_label_per_bpe
-from camembert_finetune.evaluate.eval_ner import evaluate
+from camembert_finetune.evaluate.third_party_evaluation import evaluate_ner, evaluate_parsing
 
 
 def predict(args):
@@ -89,12 +89,20 @@ def predict(args):
         if os.path.isfile(pred_file):
             print(f"WARNING : {pred_file} exist : over-writing it")
 
+        add_mwe = False
+
         with open(pred_file, "w") as f:
             n_sent = readers[task][-2]
             n_iter = int(n_sent/args.batch_size)
             print(f"Starting prediction... processing {n_sent} sentences, batch size {args.batch_size} ")
             pbar = tqdm(total=n_iter)
             # iterating through file, predicting and writing prediction to pred_file
+
+            if args.task == "pos":
+                add_mwe = True
+            elif args.task == "ner":
+                add_mwe = True
+
             while True:
                 try:
                     batch = batchIter.__next__()
@@ -145,34 +153,35 @@ def predict(args):
                     task = args.tasks[0][0]
                     append_mwe_ind = []
                     append_mwe_row = []
-                    raw_tests = []
-                    sent_ids = []
+                    append_mwe_row_ls = []
                     empty_mwe = True
 
                     for i_sent in range(batch_sze):
                         _append_mwe_row = []
+                        _append_mwe_row_dic = {}
                         _append_mwe_ind = []
                         # get raw sentence and idnex for the batch
 
-                        comment_sent_i = readers[task][0][1][-1][new_batch - 1 + i_sent][-1]
-                        raw_tests.append(comment_sent_i[1])
-                        # sent_ids.append(comment_sent_i[1])
                         # look for mwe
-                        mwe = False
+                        mwe = True
                         if mwe:
-                            for word in readers[task][0][1][-1][new_batch - 1 + i_sent][0]:
+                            for word in readers[task][0][-1][-1][new_batch - 1 + i_sent][0]:
                                 if "-" in word[0]:
                                     _append_mwe_row.append("\t".join(word) + "\n")
                                     _append_mwe_ind.append(int(word[0].split("-")[0]))
+                                    _append_mwe_row_dic[int(word[0].split("-")[0])] = "\t".join(word) + "\n"
                                     empty_mwe = False
                             append_mwe_row.append(_append_mwe_row)
+                            append_mwe_row_ls.append(_append_mwe_row_dic)
                             append_mwe_ind.append(_append_mwe_ind)
+
                     if empty_mwe:
                         append_mwe_row = None
+                        append_mwe_row_ls = None
                         append_mwe_ind = None
-                    return append_mwe_row, append_mwe_ind, sent_ids, raw_tests
+                    return append_mwe_row, append_mwe_ind, append_mwe_row_ls
 
-                # append_mwe_row, append_mwe_ind, sent_ids, raw_tests = get_mwe_ind_row()
+                append_mwe_row, append_mwe_ind, append_mwe_row_ls = get_mwe_ind_row()
 
                 for batch in range(len(detokenized_source_preprocessed["wordpieces_inputs_words"])):
 
@@ -188,11 +197,13 @@ def predict(args):
 
                     if n_key == 1:
                         for word, pred, gold in zip(detokenized_source_preprocessed["wordpieces_inputs_words"][batch],
-                                                    detokenized_label_batch[first_key][batch],
-                                                    gold_label_batch[first_key][batch]):
+                                                    detokenized_label_batch[first_key][batch], gold_label_batch[first_key][batch]):
                             ind += 1
                             pos = "_"
-                            head = "_"
+                            if ind == 1:
+                                head = "0"
+                            else:
+                                head = "1"
                             dep = "_"
                             if args.task == "pos":
                                 pos = pred
@@ -200,6 +211,12 @@ def predict(args):
                                 pos = pred
                             else:
                                 raise (Exception)
+
+                            if add_mwe and append_mwe_row_ls is not None:
+                                if ind in append_mwe_row_ls[batch]:
+
+                                    f.write(append_mwe_row_ls[batch][ind])
+
                             f.write("{ind}\t{word}\t_\t{pos}\t_\t_\t{head}\t{dep}\t_\t_\n".format(ind=ind, word=word,
                                                                                                   pos=pos, head=head,
                                                                                                   dep=dep))
@@ -223,21 +240,38 @@ def predict(args):
 
         if args.gold_file is not None:
             print("Gold file provided so running evaluation")
-
+            dir = os.path.dirname(os.path.abspath(__file__))
             if args.task == "ner":
 
                 print("Evaluating NER with official conlleval CoNLL-03 script")
-                dir = os.path.dirname(os.path.abspath(__file__))
+
                 pred_file = os.path.abspath(pred_file)
                 args.gold_file = os.path.abspath(args.gold_file)
-                f1 = evaluate(dir_end_pred=os.path.join(dir, "camembert_finetune/evaluate/eval_temp"),
-                              prediction_file=pred_file,
-                              gold_file_name=args.gold_file, verbose=2 if args.score_details else 1)
+                f1 = evaluate_ner(dir_end_pred=os.path.join(dir, "camembert_finetune/evaluate/eval_temp"),
+                                  prediction_file=pred_file,
+                                  gold_file_name=args.gold_file, verbose=2 if args.score_details else 1)
                 print("Overall F1 score : ", f1)
+            elif args.task == "pos":
+                print("Evaluating POS with official conll_ud CoNLL-2018 script")
+                #dir = os.path.dirname(os.path.abspath(__file__))
+                pred_file = os.path.abspath(pred_file)
+                dir = os.path.dirname(os.path.abspath(__file__))
+                args.gold_file = os.path.abspath(args.gold_file)
+                scores = evaluate_parsing(prediction_file=pred_file,
+                                 dir_end_temp=os.path.join(dir, "camembert_finetune/evaluate/eval_temp"),
+                                 gold_file_name=args.gold_file,
+                                 task=args.task)
+                for metric, score in scores.items():
+                    print(f"Overal {metric} scores : {score}")
+
             else:
-                raise(Exception("not supported"))
+                raise(Exception("not supported "))
+
+
         else:
-            assert args.score_details, "ERROR : --gold_file should be provided if --score_details 1"
+
+
+            pass# assert args.score_details, "ERROR : --gold_file should be provided if --score_details 1"
 
 
 if "__main__" == __name__:
