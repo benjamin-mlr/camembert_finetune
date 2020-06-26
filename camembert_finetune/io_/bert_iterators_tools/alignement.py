@@ -94,9 +94,8 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
                 # we just ignore bpe that are not first bpe of tokens
                 if index == former_index:
                     pass
-            #pdb.set_trace()
-            if index != former_index or _i + 1 == len(index_ls):
 
+            if index != former_index or _i + 1 == len(index_ls):
                 if not flag_is_first_token:
                     new_sent.append(former_token)
                 elif flag_is_first_token and (isinstance(former_token, str) and former_token.startswith(flag_word_piece_token)):
@@ -114,9 +113,7 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
                                     #pdb.set_trace()
                                     #former_token -= cumulate_shift_sub_word[ind_sent][former_token]
                                     former_token = eval(input_alignement_with_raw[ind_sent][former_token])
-
                             except:
-
                                 print("error could not process former_token {} too long for cumulated_shift {} ".format(former_token, cumulate_shift_sub_word[ind_sent]))
                                 if gold_sent:
                                     pdb.set_trace()

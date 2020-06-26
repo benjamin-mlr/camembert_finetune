@@ -44,6 +44,10 @@ def load_tok_model_for_prediction(args):
         # temporarly  : the tuned models are from different pretrained camembert
         args.bert_model = "camembert-cased-1"
         hugging_face_name = "camembert/camembert-base-ccnet"
+    elif args.task == "parsing":
+        # temporarly  : the tuned models are from different pretrained camembert
+        args.bert_model = "camembert-cased-oscar-wwm-107075step"  # POS registered model
+        hugging_face_name = "camembert-base"
     else:
         raise(Exception("Not supported yet"))
 
@@ -115,7 +119,6 @@ def load_tok_model_for_prediction(args):
     return model, tokenizer, task_to_label_dictionary, dictionaries, vocab_size
 
 
-
 def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=None,
                           special_after_space_flag="▁",
                           input_key="wordpieces_inputs_words"):
@@ -129,7 +132,6 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
     :param label_dic:
     :return:
     """
-    #assert label_dic is None, "not supported yet"
     detokenized_source_preprocessed = OrderedDict([(input_key, [])])
     detokenized_label_batch = OrderedDict([(key, []) for key in predict_dic.keys()])
     gold_label_batch = OrderedDict([(key, []) for key in predict_dic.keys()])
@@ -145,22 +147,26 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
 
             if label_dic is not None:
                 gold = label_dic[pred_label.split("-")[0]][batch_i][1:-1]
-                try:
-                    assert len(prediction) == len(gold)
-                except:
-                    pdb.set_trace()
+                assert len(prediction) == len(gold)
+
             detokenized_label = []
             detokenized_gold = []
-            assert len(prediction) == len(src), "ERROR should have 1-1 alignement here for word level task prediction"
+
+            try:
+                assert len(prediction) == len(src), f"ERROR should have 1-1 alignement here " \
+                f"for word level task prediction {len(prediction)} {len(src)}"
+            except Exception as e:
+                print(Exception(e))
 
             if label_dic is None:
-
                 for subword, label in zip(src, prediction):
                     if subword[0] != special_after_space_flag:
                         # we are in the middle of a token : so we ignore the label and we join strings
                         if ind == 0:
                             # we build detokenized_src only for the first label type
-                            detokenized_src[-1] += subword
+                            #detokenized_src[-1] += subword
+                            if subword not in ["</s>", "<pad>"]:
+                                detokenized_src[-1] += subword
                     else:
                         detokenized_label.append(label)
                         # we build detokenized_src only for the first label type
@@ -195,10 +201,12 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
 
     def sanity_check_batch():
         batch_size = -1
+        # checking that input and output have same batch size and all labels
         for key in predict_dic.keys():
             if batch_size != -1:
                 assert len(detokenized_label_batch[key]) == batch_size
-                assert len(gold_label_batch[key]) == batch_size
+                if len(gold_label_batch[key]) > 0:
+                    assert len(gold_label_batch[key]) == batch_size
             batch_size = len(detokenized_label_batch[key])
         assert len(detokenized_source_preprocessed[input_key]) == batch_size
 

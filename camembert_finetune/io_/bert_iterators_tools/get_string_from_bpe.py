@@ -35,7 +35,7 @@ def get_prediction(logits_dic, topk):
 
 def get_bpe_string(predictions_topk_dic,
                    output_tokens_tensor_aligned_dic, input_tokens_tensor_per_task, topk,
-                   tokenizer, task_to_label_dictionary, #null_str, null_token_index,
+                   tokenizer, task_to_label_dictionary,
                    task_settings, mask_index, verbose):
 
     predict_dic = OrderedDict()
@@ -75,7 +75,6 @@ def get_bpe_string(predictions_topk_dic,
         predict_dic[task_label] = sent_ls_top
         input_label = task_settings[task]["input"]
         input_tokens_tensor = input_tokens_tensor_per_task[input_label]
-        #for input_label, input_tokens_tensor in input_tokens_tensor_per_task.items():
         # some tasks may share same inputs : we don't want to post-process them several times
         if input_label in input_already_processed:
             continue

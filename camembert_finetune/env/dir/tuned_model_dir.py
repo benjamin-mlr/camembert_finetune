@@ -12,7 +12,7 @@ TUNED_MODEL_INVENTORY = {
     "pos":
         {"dir": f"{TUNED_MODEL_DIR}/pos"},
     "parsing":
-        {},
+        {"dir": f"{TUNED_MODEL_DIR}/parsing"},
     "ner":
         {"dir": f"{TUNED_MODEL_DIR}/ner"}
 

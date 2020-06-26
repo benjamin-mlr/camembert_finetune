@@ -7,6 +7,7 @@ from camembert_finetune.model.settings import TASKS_PARAMETER
 from camembert_finetune.io_.data_iterator import readers_load, data_gen_multi_task_sampling_batch
 from camembert_finetune.io_.bert_iterators_tools.get_bpe_labels import get_label_per_bpe
 from camembert_finetune.evaluate.third_party_evaluation import evaluate_ner, evaluate_parsing
+import camembert_finetune.io_.bert_iterators_tools.alignement as alignement
 
 
 def predict(args):
@@ -14,7 +15,6 @@ def predict(args):
     model, tokenizer, task_to_label_dictionary, dictionaries, vocab_size = load_tok_model_for_prediction(args)
     model.eval()
     if args.mode == "interactive":
-
 
         while True:
             text = input(f"Type a sentence and Camembert will process it (or 'exit/q') with task {args.task} \nNB : Space each word (e.g. l' Italie) \nYou --> ")
@@ -40,17 +40,20 @@ def predict(args):
                                                                          task_settings=TASKS_PARAMETER, mask_index=tokenizer.mask_token_id,
                                                                          verbose=1)
 
-            detokenized_source_preprocessed, detokenized_label_batch, _ = detokenized_src_label(source_preprocessed,predict_dic, label_ls)
+            detokenized_source_preprocessed, detokenized_label_batch, _ = detokenized_src_label(source_preprocessed, predict_dic, label_ls)
+
 
             # ASSUME BATCH len 1
+            label_display = {"types": "Dependency LABELS", "heads": "Dependency HEADS", "ner": "NER"}
             if args.output_tokenized:
                 print(f"Camembert tokenized input {source_preprocessed['wordpieces_inputs_words'][0][1:-1]}")
                 for label, pred_label in zip(label_ls, predict_dic):
-                    print(f"Camembert {label if args.task!='ner' else 'NER'} prediction: {predict_dic[pred_label][0][0][1:-1]}")
+                    print(f"Camembert {label_display.get(label,label)} prediction: {predict_dic[pred_label][0][0][1:-1]}")
+
 
             print(f"You --> {detokenized_source_preprocessed['wordpieces_inputs_words'][0]}")
             for label, pred_label in zip(label_ls, predict_dic):
-                print(f"Camembert {label.upper() if args.task != 'ner' else 'NER'} --> {detokenized_label_batch[pred_label][0]}\n")
+                print(f"Camembert {label_display.get(label,label)} --> {detokenized_label_batch[pred_label][0]}")
 
     elif args.mode == "conll":
         # loading conll filed based on the task we want
@@ -97,11 +100,10 @@ def predict(args):
             print(f"Starting prediction... processing {n_sent} sentences, batch size {args.batch_size} ")
             pbar = tqdm(total=n_iter)
             # iterating through file, predicting and writing prediction to pred_file
-
-            if args.task == "pos":
+            if args.task in ["pos", "parsing"]:
                 add_mwe = True
             elif args.task == "ner":
-                add_mwe = True
+                add_mwe = False
 
             while True:
                 try:
@@ -138,9 +140,25 @@ def predict(args):
                                                                              task_settings=TASKS_PARAMETER,
                                                                              mask_index=tokenizer.mask_token_id,
                                                                              verbose=1)
+                #  in run followed by get_detokenized_str in which : alignement.realigne_multi
+                # uses : cumulate_shift_sub_word and input_raw_alignement from batcher
+                if args.task == "parsing":
+                    parsing_heads = []
+                    for pred in predict_dic["parsing-heads"]:
+                        parsing_heads.append([alignement.realigne_multi(pred, eval("batch.{}".format(TASKS_PARAMETER[task]["alignement"])),  # _input_alignement_with_raw,
+                                                                   gold_sent=False,
+                                                                   remove_extra_predicted_token=True,
+                                                                   remove_mask_str=True,
+                                                                   flag_is_first_token=True,
+                                                                   flag_word_piece_token="▁",
+                                                                   label="heads",
+                                                                   mask_str=tokenizer.mask_token,
+                                                                   end_token=tokenizer.sep_token,
+                                                                   cumulate_shift_sub_word=cumulate_shift_sub_word)])
 
-                detokenized_source_preprocessed, detokenized_label_batch, gold_label_batch = detokenized_src_label(
-                                                source_preprocessed, predict_dic, label_ls, label_dic=label_dic)
+                    predict_dic["parsing-heads"] = parsing_heads[0]
+
+                detokenized_source_preprocessed, detokenized_label_batch, _ = detokenized_src_label(source_preprocessed, predict_dic, label_ls)
 
                 ls_key = list(detokenized_label_batch.keys())
                 n_key = len(ls_key)
@@ -160,7 +178,7 @@ def predict(args):
                         # get raw sentence and idnex for the batch
 
                         # get mwe
-                        for word in readers[task][0][-1][-1][(new_batch-1)*args.batch_size + i_sent][0]:#[new_batch - 1 + i_sent][0]:
+                        for word in readers[task][0][-1][-1][(new_batch-1)*args.batch_size + i_sent][0]:
                             if "-" in word[0]:
 
                                 _append_mwe_row_dic[int(word[0].split("-")[0])] = "\t".join(word) + "\n"
@@ -185,10 +203,10 @@ def predict(args):
                         conll_comment_ls = readers[task][0][0][-1][(new_batch-1)*args.batch_size + batch][-1]
                         for conll_comment in conll_comment_ls:
                             f.write(conll_comment)
-
+                    ind = 0
                     if n_key == 1:
-                        ind = 0
-                        for word, pred, gold in zip(detokenized_source_preprocessed["wordpieces_inputs_words"][batch], detokenized_label_batch[first_key][batch], gold_label_batch[first_key][batch]):
+
+                        for word, pred in zip(detokenized_source_preprocessed["wordpieces_inputs_words"][batch], detokenized_label_batch[first_key][batch]):#, gold_label_batch[first_key][batch]):
                             ind += 1
                             pos = "_"
                             if ind == 1:
@@ -215,15 +233,19 @@ def predict(args):
                     else:
                         assert args.task == "parsing"
                         second_key = ls_key[1]
-                        for word, pred, gold, pred_2, gold_2 in zip(
+
+                        for word, pred, pred_2 in zip( #, pred_2, gold_2 \
                                 detokenized_source_preprocessed["wordpieces_inputs_words"][batch],
-                                detokenized_label_batch[first_key][batch], gold_label_batch[first_key][batch],
-                                detokenized_label_batch[second_key][batch], gold_label_batch[second_key][batch]):
+                                detokenized_label_batch[first_key][batch], #gold_label_batch[first_key][batch],
+                                detokenized_label_batch[second_key][batch]):#, #gold_label_batch[second_key][batch]):
                             ind += 1
                             pos = "_"
                             head = pred
                             dep = pred_2
-
+                            if add_mwe and append_mwe_row_ls is not None:
+                                # adding mwe
+                                if ind in append_mwe_row_ls[batch]:
+                                    f.write(append_mwe_row_ls[batch][ind])
                             f.write("{ind}\t{word}\t_\t{pos}\t_\t_\t{head}\t{dep}\t_\t_\n".format(ind=ind, word=word,
                                                                                                   pos=pos, head=head,
                                                                                                   dep=dep))
@@ -241,7 +263,7 @@ def predict(args):
                                   prediction_file=pred_file,
                                   gold_file_name=args.gold_file, verbose=2 if args.score_details else 1)
                 print("Overall F1 score : ", f1)
-            elif args.task == "pos":
+            elif args.task in ["pos", "parsing"]:
                 print("Evaluating POS with third party script conll_ud CoNLL-2018 script")
                 dir = os.path.dirname(os.path.abspath(__file__))
                 args.gold_file = os.path.abspath(args.gold_file)
@@ -252,8 +274,6 @@ def predict(args):
                 for metric, score in scores.items():
                     print(f"Overal {metric} scores : {score}")
 
-            else:
-                raise(Exception("not supported "))
 
 
 
