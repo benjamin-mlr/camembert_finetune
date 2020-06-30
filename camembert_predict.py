@@ -246,6 +246,8 @@ def predict(args):
                                 # adding mwe
                                 if ind in append_mwe_row_ls[batch]:
                                     f.write(append_mwe_row_ls[batch][ind])
+                            if ind == 13 and dep=="punct":
+                                pdb.set_trace()
                             f.write("{ind}\t{word}\t_\t{pos}\t_\t_\t{head}\t{dep}\t_\t_\n".format(ind=ind, word=word,
                                                                                                   pos=pos, head=head,
                                                                                                   dep=dep))

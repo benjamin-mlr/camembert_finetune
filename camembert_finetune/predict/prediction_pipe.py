@@ -160,7 +160,8 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
 
             if label_dic is None:
                 for subword, label in zip(src, prediction):
-                    if subword[0] != special_after_space_flag:
+                    if subword[0] != special_after_space_flag\
+                            :
                         # we are in the middle of a token : so we ignore the label and we join strings
                         if ind == 0:
                             # we build detokenized_src only for the first label type
@@ -173,6 +174,9 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
                         if ind == 0:
                             # we remove the special character
                             detokenized_src.append(subword[1:])
+                            if len(subword[1:]) == 0:
+                                #pdb.set_trace()
+                                print("EMPTY TOKEN",subword)
                 detokenized_label_batch[pred_label].append(detokenized_label)
             else:
                 for subword, label, gold in zip(src, prediction, gold):
