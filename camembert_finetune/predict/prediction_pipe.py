@@ -1,5 +1,4 @@
 from camembert_finetune.env.imports import os, pdb, OrderedDict
-from camembert_finetune.env.dir.pretrained_model_dir import BERT_MODEL_DIC
 from camembert_finetune.io_.dat import conllu_data
 from camembert_finetune.trainer.tools.multi_task_tools import get_vocab_size_and_dictionary_per_task
 from camembert_finetune.model.settings import TASKS_PARAMETER
@@ -58,21 +57,15 @@ def load_tok_model_for_prediction(args):
     args, dict_path, model_dir = get_model_dirs(args)
     # args = args_preprocessing(args)
 
-    encoder = BERT_MODEL_DIC[args.bert_model]["encoder"]
-    vocab_size = BERT_MODEL_DIC[args.bert_model]["vocab_size"]
+    encoder = 'RobertaModel' #BERT_MODEL_DIC[args.bert_model]["encoder"]
+    vocab_size = 32005 #BERT_MODEL_DIC[args.bert_model]["vocab_size"]
 
     tokenizer = CamembertTokenizer
 
-
     args.output_attentions = False
-    #voc_tokenizer = BERT_MODEL_DIC[args.bert_model]["vocab"]
-    #tokenizer_2 = tokenizer.from_pretrained(voc_tokenizer, do_lower_case=args.case == "lower")  # ,shuffle_bpe_embedding=args.shuffle_bpe_embedding)
 
-    tokenizer = tokenizer.from_pretrained(hugging_face_name, do_lower_case=args.case == "lower")  # ,shuffle_bpe_embedding=args.shuffle_bpe_embedding)
+    tokenizer = tokenizer.from_pretrained(hugging_face_name, do_lower_case=args.case == "lower")
 
-    #assert tokenizer.encode("Ok je") == tokenizer_2.encode("Ok je"), "ERROR tokenizer loaded with camembert-base not the same as local one"
-
-    # _dev_path = args.dev_path if args.dev_path is not None else args.train_path
     word_dictionary, word_norm_dictionary, char_dictionary, pos_dictionary, \
     xpos_dictionary, type_dictionary = \
         conllu_data.load_dict(dict_path=dict_path,
@@ -102,7 +95,6 @@ def load_tok_model_for_prediction(args):
         type_dictionary=type_dictionary,
         task_parameters=TASKS_PARAMETER)
 
-    # "/Users/bemuller/Documents/Work/INRIA/dev/transfer/transfer/downstream/finetune/env/dir/../.././checkpoints/bert/dd1d5-2178d-dd1d5_job-3c621_model/dd1d5-2178d-dd1d5_job-3c621_model-checkpoint.pt"
     model = make_bert_multitask(args=args, pretrained_model_dir=model_dir, init_args_dir=args.init_args_dir,
                                 tasks=[task for tasks in args.tasks for task in tasks],
                                 mask_id=tokenizer.mask_token_id, encoder=encoder,
@@ -155,28 +147,45 @@ def detokenized_src_label(source_preprocessed, predict_dic, label_ls, label_dic=
             try:
                 assert len(prediction) == len(src), f"ERROR should have 1-1 alignement here " \
                 f"for word level task prediction {len(prediction)} {len(src)}"
+
             except Exception as e:
+                pdb.set_trace()
                 print(Exception(e))
 
             if label_dic is None:
                 for subword, label in zip(src, prediction):
-                    if subword[0] != special_after_space_flag\
-                            :
+
+                    if subword[0] != special_after_space_flag:
                         # we are in the middle of a token : so we ignore the label and we join strings
                         if ind == 0:
+                            # ind 0 in case several label set --> we work on src for only 1 of them
                             # we build detokenized_src only for the first label type
-                            #detokenized_src[-1] += subword
                             if subword not in ["</s>", "<pad>"]:
+                                # Handling special case where number have been splitted and failed to be reconstructed
+                                try:
+                                    fix = isinstance(eval("1" + subword), int)
+                                except Exception as e:
+                                    fix = False
+                                # if its a number and label is -1 (pointed as non-first sub-token) then we need to fix
+                                if fix and len(detokenized_src[-1]) == 0 and detokenized_label[-1] == -1:
+                                    detokenized_label = detokenized_label[:-1]
+                                    detokenized_src = detokenized_src[:-1]
+
                                 detokenized_src[-1] += subword
                     else:
                         detokenized_label.append(label)
+                        try:
+                            fix = isinstance(eval("1" + subword[1:]), int)
+                        except Exception as e:
+                            fix = False
                         # we build detokenized_src only for the first label type
+                        #print("Label append", detokenized_label)
                         if ind == 0:
-                            # we remove the special character
-                            detokenized_src.append(subword[1:])
-                            if len(subword[1:]) == 0:
-                                #pdb.set_trace()
-                                print("EMPTY TOKEN",subword)
+                            if fix and detokenized_label[-1] == -1:
+                                detokenized_label = detokenized_label[:-1]
+                                detokenized_src[-1] += subword[1:]
+                            else:
+                                detokenized_src.append(subword[1:])
                 detokenized_label_batch[pred_label].append(detokenized_label)
             else:
                 for subword, label, gold in zip(src, prediction, gold):

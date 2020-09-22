@@ -1,7 +1,7 @@
 
 from camembert_finetune.env.imports import pdb, torch, OrderedDict, os, tqdm
 from camembert_finetune.args.args_parse import args_predict, args_check
-from camembert_finetune.io_.bert_iterators_tools.get_string_from_bpe import get_prediction, get_bpe_string, get_detokenized_str
+from camembert_finetune.io_.bert_iterators_tools.get_string_from_bpe import get_prediction, get_bpe_string
 from camembert_finetune.predict.prediction_pipe import load_tok_model_for_prediction, detokenized_src_label
 from camembert_finetune.model.settings import TASKS_PARAMETER
 from camembert_finetune.io_.data_iterator import readers_load, data_gen_multi_task_sampling_batch
@@ -123,7 +123,7 @@ def predict(args):
                                       vocab_len=vocab_size, mask_token_index=tokenizer.mask_token_id,
                                       sep_token_index=tokenizer.eos_token_id, cls_token_index=tokenizer.bos_token_id,
                                       dropout_input_bpe=0.0)
-
+                # TODO REMOVE LABEL_PER_TASK
                 logits_dic, loss_dic, _ = model(input_tokens_tensor_per_task, token_type_ids=None,
                                                 labels=label_per_task, head_masks=head_masks,
                                                 attention_mask=input_mask_per_task)
@@ -131,6 +131,7 @@ def predict(args):
                 predictions_topk = get_prediction(logits_dic, topk=1)
                 label_ls = TASKS_PARAMETER[args.tasks[0][0]]["label"]
 
+                # TODO REMOVE LABEL_PER_TASK
                 source_preprocessed, label_dic, predict_dic = get_bpe_string(predictions_topk_dic=predictions_topk,
                                                                              output_tokens_tensor_aligned_dic=label_per_task,
                                                                              input_tokens_tensor_per_task=input_tokens_tensor_per_task,
@@ -140,26 +141,27 @@ def predict(args):
                                                                              task_settings=TASKS_PARAMETER,
                                                                              mask_index=tokenizer.mask_token_id,
                                                                              verbose=1)
-                #  in run followed by get_detokenized_str in which : alignement.realigne_multi
+                # in run followed by get_detokenized_str in which : alignement.realigne_multi
                 # uses : cumulate_shift_sub_word and input_raw_alignement from batcher
+                #pdb.set_trace()
                 if args.task == "parsing":
+                    #pdb.set_trace()
                     parsing_heads = []
                     for pred in predict_dic["parsing-heads"]:
+                        # realigning heads prediction (bpe index to word index) (also remove pad prediction)
+                        #pdb.set_trace()
+                        # ERROR : it is breaking the detokenized_src_label --> need to keep as many src token
                         parsing_heads.append([alignement.realigne_multi(pred, eval("batch.{}".format(TASKS_PARAMETER[task]["alignement"])),  # _input_alignement_with_raw,
-                                                                   gold_sent=False,
-                                                                   remove_extra_predicted_token=True,
-                                                                   remove_mask_str=True,
-                                                                   flag_is_first_token=True,
-                                                                   flag_word_piece_token="▁",
-                                                                   label="heads",
-                                                                   mask_str=tokenizer.mask_token,
-                                                                   end_token=tokenizer.sep_token,
-                                                                   cumulate_shift_sub_word=cumulate_shift_sub_word)])
-
+                                                                         gold_sent=False,remove_extra_predicted_token=False,remove_mask_str=True,flag_is_first_token=True,flag_word_piece_token="▁",
+                                                                        label="heads",mask_str=tokenizer.mask_token,end_token=tokenizer.sep_token, cumulate_shift_sub_word=cumulate_shift_sub_word)])
+                        #parsing_heads.append([alignement.realigne_heads_inference(pred, eval("batch.{}".format(TASKS_PARAMETER[task]["alignement"])))])
                     predict_dic["parsing-heads"] = parsing_heads[0]
-
-                detokenized_source_preprocessed, detokenized_label_batch, _ = detokenized_src_label(source_preprocessed, predict_dic, label_ls)
-
+                    #print(len(predict_dic["parsing-heads"][0][0]))
+                    #print(label_dic["pos"])
+                #pdb.set_trace()
+                detokenized_source_preprocessed, detokenized_label_batch, _ = \
+                    detokenized_src_label(source_preprocessed, predict_dic, label_ls)
+                #pdb.set_trace()
                 ls_key = list(detokenized_label_batch.keys())
                 n_key = len(ls_key)
                 first_key = ls_key[0]
@@ -246,8 +248,8 @@ def predict(args):
                                 # adding mwe
                                 if ind in append_mwe_row_ls[batch]:
                                     f.write(append_mwe_row_ls[batch][ind])
-                            if ind == 13 and dep=="punct":
-                                pdb.set_trace()
+                            if ind == 13 and dep == "punct":
+                                pass
                             f.write("{ind}\t{word}\t_\t{pos}\t_\t_\t{head}\t{dep}\t_\t_\n".format(ind=ind, word=word,
                                                                                                   pos=pos, head=head,
                                                                                                   dep=dep))
@@ -275,9 +277,6 @@ def predict(args):
                                  task=args.task)
                 for metric, score in scores.items():
                     print(f"Overal {metric} scores : {score}")
-
-
-
 
 
 if "__main__" == __name__:

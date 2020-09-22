@@ -8,90 +8,13 @@ from camembert_finetune.env.imports import os, re
 # this files aims to group all of those at some point
 
 
-DATA_UD = os.environ.get("DATA_UD", "/Users/bemuller/Documents/Work/INRIA/dev/parsing/data/Universal-Dependencies-2.4")
-DATA_UD_25 = os.environ.get("DATA_UD_25", "/Users/bemuller/Documents/Work/INRIA/dev/parsing/data/Universal-Dependencies-2.5")
-DATA_WIKI_NER = os.environ.get("DATA_WIKI_NER", "/Users/bemuller/Documents/Work/INRIA/dev/parsing/data/wikiner")
+DATA_UD = os.environ.get("DATA_UD")
+DATA_UD_25 = os.environ.get("DATA_UD_25")
+DATA_WIKI_NER = os.environ.get("DATA_WIKI_NER")
 
 
-DATASET_CODE_LS = ['af_afribooms', 'ar_nyuad', 'ar_padt', 'be_hse', 'bg_btb', 'bxr_bdt', 'ca_ancora', 'cop_scriptorium',
-                   'cs_cac', 'cs_cltt', 'cs_fictree', 'cs_pdt', 'cu_proiel', 'da_ddt', 'de_gsd', 'el_gdt', 'en_esl',
-                   'en_ewt', 'en_gum', 'en_lines', 'en_partut', 'es_ancora', 'es_gsd', 'et_edt', 'et_ewt', 'eu_bdt',
-                   'fa_seraji', 'fi_ftb', 'fi_tdt', 'fr_ftb', 'fr_gsd', 'fr_partut', 'fr_sequoia', 'fr_spoken', 'fro_srcmf',
-                   'ga_idt', 'gl_ctg', 'gl_treegal', 'got_proiel', 'grc_perseus', 'grc_proiel', 'he_htb', 'hi_hdtb', 'hr_set',
-                   'hsb_ufal', 'hu_szeged', 'hy_armtdp', 'id_gsd', 'it_isdt', 'it_partut', 'it_postwita', 'it_vit', 'ja_bccwj',
-                   'ja_gsd', 'kk_ktb', 'kmr_mg', 'ko_gsd', 'ko_kaist', 'la_ittb', 'la_perseus', 'la_proiel', 'lt_alksnis', 'lt_hse',
-                   'lv_lvtb', 'lzh_kyoto', 'mr_ufal', 'mt_mudt', 'nl_alpino', 'nl_lassysmall', 'no_bokmaal', 'no_nynorsk', 'no_nynorsklia',
-                   'orv_torot', 'pl_lfg', 'pl_pdb', 'pt_bosque', 'pt_gsd', 'qhe_hiencs', 'ro_nonstandard', 'ro_rrt', 'ru_gsd', 'ru_syntagrus',
-                   'ru_taiga', 'sk_snk', 'sl_ssj', 'sl_sst', 'sme_giella', 'sr_set', 'sv_lines', 'sv_talbanken', 'swl_sslc', 'ta_ttb',
-                   'te_mtg', 'tr_imst', 'ug_udt', 'uk_iu', 'ur_udtb', 'vi_vtb', 'wo_wtb', 'zh_gsd',
-                   "fr_gsd+fr_sequoia+fr_spoken+fr_partut",
-                   "alg_arabizi", "arabizi",
-                   "fr_ugc_cb2", "en_ugc_owoputi",
-                   "en_ugc_lexnorm", "en_tweet", "fr_ftb_ner_pos","fr_ftb_pos_ner",
-                  "ar_padt_1500_fr_partut", "ar_padt_1500_it_partut", "ar_padt_1500_en_partut", "ar_padt_1500",
-                   "fr_partut_it_partut", "fr_partut_en_partut","it_partut_en_partut", "alg_arabizi_lang",
-                   "alg_arabizi_l_60q", "alg_arabizi_no_code_mixed", "alg_arabizi_b_10q", "alg_arabizi_15_30q", "alg_arabizi_10_15q","alg_arabizi_glose", "alg_arabizi_glose_alg_arabizi",
-                   "ar_padt_1500_fr_partut","it_partut_mt_mudt", "ar_padt_1500_mt_mudt","alg_arabizi_mt_mudt","fr_partut_mt_mudt",
-                   "alg_arabizi_mixed_t1", "alg_arabizi_mixed_t2", "alg_arabizi_mixed_t3", "alg_arabizi_arabizi","alg_arabizi_mt_mudt_fr_partut",
+DATASET_CODE_LS = ['af_afribooms']
 
-                   # 2.5
-                   "orv_torot", "fro_srcmf", "got_proiel", "ug_udt",
-                   # only test
-                   "bm_crb", "pcm_nsc",
-
-                   # src : ru_gsd fr_partut, hu_szeged, english
-
-                   # NEW SAMPLE
-                   'it_partut_1500_1',
-
-                   'en_partut_1500_1',
-                    "en_ewt_1500_1",
-                   'fr_gsd_1500_1',
-                   'fr_gsd_5000_1',
-
-                   'ar_padt_1500_1',
-                   'ar_padt_5000_1',
-
-                   'ru_gsd_1500_1',
-
-                   'tr_imst_1500_1',
-
-                   'de_gsd_1500_1',
-                   'de_gsd_5000_1',
-
-                   # 2.5
-                   'got_proiel_1500_1',
-
-                   'fro_srcmf_1500_1',
-                   'fro_srcmf_5000_1',
-
-                   'orv_torot_1500_1',
-                   'orv_torot_5000_1',
-
-                   'ug_udt_1500_1',
-
-                  "hr_set_1500_1",  "sr_set_1500_1" , "hi_hdtb_1500_1", "ur_udtb_1500_1" , 
-                  "hr_set",  "sr_set" , "hi_hdtb", "ur_udtb" , "ta_ttb" ,
-                'fr_wiki', 'ar_wiki', 'id_wiki', 'de_wiki', 'ru_wiki', 'tr_wiki', 'en_wiki',
-
-                   "hr_set_1500_1", "sr_set_1500_1", "hi_hdtb_1500_1", "ur_udtb_1500_1",
-                   "hr_set", "sr_set", "hi_hdtb", "ur_udtb", "ta_ttb",
-                   "en_ewt_1500_1",
-
-                   "id_gsd_1500_1",
-                   'ug_udt_1123_1',
-                   "narabizi", "tr_imst_id_gsd_ar_padt_500_x3",
-                   "tr_imst_1000_ar_padt_500", "ja_gsd_1500_1",
-                   'fr_wiki', 'ar_wiki', 'id_wiki', 'de_wiki', 'ru_wiki', 'tr_wiki', 'en_wiki',
-                   'fr_wiki_5000_1', 'ar_wiki_5000_1', 'id_wiki_5000_1', 'de_wiki_5000_1', 'ru_wiki_5000_1',
-                   'tr_wiki_5000_1', 'en_wiki_5000_1'
-                
-                   ]
-
-
-DATASET_CODE_LS.extend(["alg_arabizi_{}_fr_partut".format(n_sent_arabizi) for n_sent_arabizi in [50, 100, 200, 400, 800, 1172]])
-DATASET_CODE_LS.extend(["alg_arabizi_{}_fr_gsd".format(n_sent_arabizi) for n_sent_arabizi in [50, 100, 200, 400, 800, 1172]])
-DATASET_CODE_LS.extend(["alg_arabizi_10_2_fr_partut", "alg_arabizi_10_1_fr_partut", "alg_arabizi_10_2_fr_gsd", "alg_arabizi_10_1_fr_gsd"])
 
 
 def get_dir_data0(set, data_code, demo=False):
@@ -135,7 +58,6 @@ def get_dir_data(set, data_code, demo=False):
             assert os.path.isfile(file_dir), "{} not found".format(file_dir)
             print("WARNING : WIKI NER USED")
     return file_dir
-
 
 
 

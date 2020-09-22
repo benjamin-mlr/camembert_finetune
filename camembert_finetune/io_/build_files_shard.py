@@ -94,27 +94,3 @@ def build_shard(dir_shard, dir_file, n_sent_max_per_file, format="conll",dry_run
 
     return dir_shard, n_shards, n_sents
     
-
-if __name__ == "__main__":
-    # "clean_data", "code-mixed_sep_13-train"
-    from env.project_variables import MLM_DATA
-    #for domain in ["tweets_fr", "wiki_fr", "wiki_en", "reddit_en","reddit_fr", "tweets_en"]:
-    #for domain in ["tweets_fr", "wiki_fr"]:
-    for domain in ["tweets_fr"]:
-    #for domain in [ "reddit_en","reddit_fr"]:
-
-        origin = MLM_DATA[domain]["train"]["large"]
-        shard = MLM_DATA[domain]["train"]["shard"]
-        try:
-        
-            print("SHARD starting {} {} ".format(origin, shard))
-            build_shard(shard, [origin], N_SENT_MAX_CONLL_PER_SHARD, dry_run=False)
-            print("SHARD built for {} {} ".format(origin, shard))
-        except Exception as e:
-            print(e)
-            print("FAILLING  {} {} ".format(origin, shard))
-    #shard = os.path.join(os.environ.get("MT_NORM_PARSE_DATA", ".."), "data", "wiki", "fr", "train")
-    #data_dir = os.path.join(PROJECT_PATH, "data", "wiki", "fr", "fr.train.conll") #
-    #shard = os.path.join(os.environ.get("MT_NORM_PARSE_DATA", ".."), "data", "tweets_en_pan_ganesh", "train")
-    #data_dir = os.path.join(PROJECT_PATH, "data", "tweets_en_pan_ganesh", "pan_tweets_en-train.conll") #"/Users/bemuller/Documents/Work/INRIA/dev/parsing/data/Universal-Dependencies-2.4/fr_spoken-ud-train.conllu"
-    #data_dir = os.path.join(PROJECT_PATH, "data", "code_mixed", "code-dev-10k.conll.conll")

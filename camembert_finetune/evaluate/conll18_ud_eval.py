@@ -439,14 +439,19 @@ def evaluate(gold_ud, system_ud):
         while index < len(gold_ud.characters) and index < len(system_ud.characters) and \
                 gold_ud.characters[index] == system_ud.characters[index]:
             index += 1
-        
-            
-        raise UDError(
+        try:
+            raise UDError(
             "The concatenation of tokens in gold file and in system file differ!\n" +
             "First 20 differing characters in gold file: '{}' and system file: '{}'".format(
                 "".join(map(_encode, gold_ud.characters[index:index + 20])),
                 "".join(map(_encode, system_ud.characters[index:index + 20]))
             ))
+
+        except Exception as e:
+            if "<unk>" in "".join(system_ud.characters[index:index + 20]):
+                print(e)
+            else:
+                raise(e)
 
 
     # Align words

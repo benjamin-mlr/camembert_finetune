@@ -1,13 +1,9 @@
 from camembert_finetune.env.imports import logging, tarfile, tempfile, torch, json, pdb, nn, OrderedDict, os
 
-
-from camembert_finetune.args.args_parse import get_config_param_to_modify
-
 from camembert_finetune.io_.logger import printing
 from camembert_finetune.io_.report.report_tools import get_init_args_dir
 from camembert_finetune.transformers.transformers.modeling_multitask import BertMultiTask
 from transformers.modeling_camembert import CamembertModel
-#from camembert_finetune.env.dir.pretrained_model_dir import DIR_2_STAT_MAPPING
 from transformers.configuration_camembert import CamembertConfig
 
 
@@ -17,7 +13,6 @@ def make_bert_multitask(pretrained_model_dir, tasks, num_labels_per_task, init_a
         "ERROR : num_labels_per_task {} should be a dictionary".format(num_labels_per_task)
     assert isinstance(tasks, list) and len(tasks) >= 1, "ERROR tasks {} should be a list of len >=1".format(tasks)
     # we modify programmatically the config file base on argument passed to args
-    config_to_update = get_config_param_to_modify(args) if args is not None else OrderedDict()
 
     if pretrained_model_dir is not None and init_args_dir is None:
         raise(Exception("Not supported yet"))

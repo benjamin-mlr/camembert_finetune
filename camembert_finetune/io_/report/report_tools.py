@@ -1,9 +1,7 @@
 from camembert_finetune.io_.logger import printing
 from camembert_finetune.env.imports import pdb, os, json, re, OrderedDict, np
-from camembert_finetune.env.dir.project_directories import CHECKPOINT_BERT_DIR
 from camembert_finetune.env.dir.data_dir import get_code_data
 
-#from env.project_variables import REPO_DATASET
 REPO_DATASET = {}
 
 def get_score(scores, metric, info_score, task, data):

@@ -51,23 +51,28 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
     - detokenization of ls_sent_str based on input_alignement_with_raw index
     - we remove paddding and end detokenization at symbol [SEP] that we take as the end of sentence signal
     """
-
-    assert len(ls_sent_str) == len(input_alignement_with_raw), \
-        "ERROR : ls_sent_str {} : {} input_alignement_with_raw {} : {} ".format(ls_sent_str, len(ls_sent_str),
-                                                                                input_alignement_with_raw, len(input_alignement_with_raw))
+    assert len(ls_sent_str) == len(input_alignement_with_raw), "ERROR : ls_sent_str {} : {} input_alignement_with_raw {}" \
+                                                               " : {} ".format(ls_sent_str, len(ls_sent_str),
+                                                                               input_alignement_with_raw,
+                                                                               len(input_alignement_with_raw))
     new_sent_ls = []
     if label == "heads":
         assert cumulate_shift_sub_word is not None
     ind_sent = 0
+    DEPLOY_MODE = True
     for sent, index_ls in zip(ls_sent_str, input_alignement_with_raw):
+        # alignement index and input/label should have same len
         assert len(sent) == len(index_ls), "ERROR : {} sent {} len {} and index_ls {} len {} not same len".format(label, sent, index_ls, len(sent), len(index_ls))
 
         former_index = -1
         new_sent = []
         former_token = ""
+
         for _i, (token, index) in enumerate(zip(sent, index_ls)):
+
             trigger_end_sent = False
             index = int(index)
+
             if remove_extra_predicted_token:
                 if index == 1000 or index == -1:
                     # we reach the end according to gold data
@@ -79,9 +84,10 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
                             assert token in PADING_SYMBOLS, "WARNING 123 : breaking gold sequence on {} token not in {}".format(token , PADING_SYMBOLS)
                         except Exception as e:
                             print(e)
+            # if working with input : handling mask token in a specific way
             if token == mask_str and not keep_mask:
                 token = "X" if not remove_mask_str else ""
-            # concatanating wordpieces
+            # if working with input merging # concatanating wordpieces
             if LABEL_PARAMETER[label]["realignement_mode"] == "detokenize_bpe":
                 if index == former_index:
                     if token.startswith(flag_word_piece_token) and not flag_is_first_token:
@@ -89,13 +95,13 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
                     else:
                         former_token += token
             # for sequence labelling : ignoring
-
             elif LABEL_PARAMETER[label]["realignement_mode"] == "ignore_non_first_bpe":
                 # we just ignore bpe that are not first bpe of tokens
                 if index == former_index:
                     pass
-
-            if index != former_index or _i + 1 == len(index_ls):
+            # if new token --> do something on the label
+            # if index != former_index or _i + 1 == len(index_ls): # for DEPLOY_MODE = False
+            if (index != former_index or index == -1) or _i + 1 == len(index_ls):
                 if not flag_is_first_token:
                     new_sent.append(former_token)
                 elif flag_is_first_token and (isinstance(former_token, str) and former_token.startswith(flag_word_piece_token)):
@@ -108,52 +114,71 @@ def realigne_multi(ls_sent_str, input_alignement_with_raw,
                                 #print(cumulate_shift_sub_word[ind_sent][former_index], former_token, cumulate_shift_sub_word[ind_sent][former_token])
                                 #cumulate_shift_sub_word[ind_sent][former_token]
                                 #print(ls_sent_str[ind_sent][former_index], former_token)
-                                #pdb.set_trace()
                                 if former_token != -1:
                                     #pdb.set_trace()
+                                    #print("-->",former_index)
                                     #former_token -= cumulate_shift_sub_word[ind_sent][former_token]
                                     former_token = eval(input_alignement_with_raw[ind_sent][former_token])
+                                    token = eval(input_alignement_with_raw[ind_sent][token])
                             except:
                                 print("error could not process former_token {} too long for cumulated_shift {} ".format(former_token, cumulate_shift_sub_word[ind_sent]))
                                 if gold_sent:
                                     pdb.set_trace()
-
-                                #pdb.set_trac coue()
-
                             #former_token-=cumulate_shift_sub_word[ind_sent][former_token]
-                        #pdb.set_trace()
-
                     # is this last case possible
-                    new_sent.append(former_token)
+
+
+                    #new_sent.append(former_token)
+                    new_sent.append(token)
+
                 former_token = token
                 if trigger_end_sent:
+                    print("break trigger_end_sent")
                     break
-            # if not pred mode : always not trigger_end_sent : True (required for the model to not stop too early if predict SEP too soon)
+
+            elif DEPLOY_MODE:
+                # EXCEPT PUNCTUNATION FOR WHICH SHOULD ADD -1 BEFORE !
+
+                #if former_index != -1:
+                #    new_sent.append(eval(input_alignement_with_raw[ind_sent][former_token]))
+                former_token = token
+                new_sent.append(-1)
+
+                # ADD MORE IF
+            #pdb.set_trace()
+            # if not pred mode : always not trigger_end_sent : True
+            # (required for the model to not stop too early if predict SEP too soon)
             # NEW CLEANER WAY OF BREAKING : should be generalize
-
             if remove_extra_predicted_token and trigger_end_sent:
-
                 if not flag_is_first_token:
-
                     new_sent.append(former_token)
                 elif flag_is_first_token and (isinstance(former_token, str) and former_token.startswith(flag_word_piece_token)):
                     new_sent.append(former_token[len(flag_word_piece_token):])
                 else:
                     # is this last case possible
                     new_sent.append(former_token)
+                print("break remove_extra_predicted_token")
                 break
             # TODO : SHOULD be cleaned
             # XLM (same first and end token) so not activated for </s>
 
-            if ((former_token == end_token and end_token != "</s>") or _i + 1 == len(index_ls) and not remove_extra_predicted_token) or ((remove_extra_predicted_token and (former_token == end_token and trigger_end_sent) or _i + 1 == len(index_ls))):
-                new_sent.append(token)
-                break
+            if not DEPLOY_MODE:
+                if ((former_token == end_token and end_token != "</s>") or _i + 1 == len(index_ls) and not remove_extra_predicted_token) or ((remove_extra_predicted_token and (former_token == end_token and trigger_end_sent) or _i + 1 == len(index_ls))):
+                    new_sent.append(token)
+
+                    print(f"break new_sent {((former_token == end_token and end_token != '</s>') or _i + 1 == len(index_ls) and not remove_extra_predicted_token)} or { ((remove_extra_predicted_token and (former_token == end_token and trigger_end_sent) or _i + 1 == len(index_ls)))}")
+                    break
             former_index = index
-        new_sent_ls.append(new_sent[1:])
+        #if DEPLOY_MODE:
+        #    new_sent_ls.append(new_sent[1:])
+        #else:
+        #new_sent_ls.append(new_sent[1:])
+        new_sent_ls.append(new_sent)
         ind_sent += 1
     if gold_sent:
         print("CUMULATED SHIFT", cumulate_shift_sub_word)
         print("GOLD:OUTPUT BEFORE DETOKENIZATION ", ls_sent_str)
         print("GOLD:OUTPUT AFTER DETOKENIZATION", new_sent_ls)
+
     return new_sent_ls
 

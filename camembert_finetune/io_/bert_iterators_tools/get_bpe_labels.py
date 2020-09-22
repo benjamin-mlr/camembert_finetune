@@ -56,6 +56,7 @@ def get_bpe_label_word_level_task(labels, batch, input_tokens_tensor,
                     counter = 0
             return new_sent
 
+        # TO-REMOVE
         def test_get_cumulated_non_first_bpe_counter():
             assert [0, 0, 0, 1, 1, 1, 3, 3, 3, 5, 5, 5] == get_cumulated_non_first_bpe_counter([0, 1, 2, 2 ,3, 4, 5, 5, 5, 6, 7, 8, 8, 8, 9, 10 ,11, 1000])
             assert [0, 0, 0, 1, 1, 1, 3, 3, 3, 5, 5, 5] == get_cumulated_non_first_bpe_counter([0, 1, 2, 2, 3, 4, 5, 5, 5, 6, 7, 8, 8, 8, 9, 10, 11])
@@ -84,7 +85,6 @@ def get_bpe_label_word_level_task(labels, batch, input_tokens_tensor,
                         # CLS and SEQ points to the first token indexed by -1 so become 1
                         if label not in [ROOT_HEADS_INDEX, END_HEADS_INDEX] and cumulate_shift[ind_sent][label] > 0:
                             label += cumulate_shift[ind_sent][label]
-
                         label += CLS_ADJUST
                 except Exception as e:
                     try:
@@ -153,7 +153,6 @@ def get_label_per_bpe(tasks, batch, input_tokens_tensor, input_alignement_with_r
     returns input, input masks and output for each tasks
     (in regard to the task type , so far only word level is supported)
     """
-    #  TODO : should be done in pytorch + reducanccies with get_index
     label_per_task = OrderedDict()
     input_tokens_tensor_per_task = OrderedDict()
     token_type_ids = OrderedDict()
@@ -170,8 +169,8 @@ def get_label_per_bpe(tasks, batch, input_tokens_tensor, input_alignement_with_r
                     # for now we align parsing and tagging signal with raw input using
                     # get_bpe_label_word_level_task here
                     output_tokens_tensor, head_mask, input_tokens_tensor, _cumulate_shift = get_bpe_label_word_level_task(labels=task_batch, pad=pad_index,
-                                                                                                         batch=batch,
-                                                                                                         #input_tokens_tensor,
+                                                                                                                          batch=batch,
+                                                                                                                          #input_tokens_tensor,
                                                                                                          #input_alignement_with_raw,
                                                                                                          use_gpu=use_gpu, label_name=task_batch_name,
                                                                                                          input_tokens_tensor=eval("batch.{}".format(tasks_parameters[task]["input"])).clone(),

@@ -1,8 +1,3 @@
-import os
-from camembert_finetune.env.imports import os, OrderedDict
-#from camembert_finetune.env.dir.project_directories import BERT_MODELS_DIRECTORY
-
-#assert os.path.isdir(BERT_MODELS_DIRECTORY)#, "ERROR : {} does not exist : it should host the bert models tar.gz and vocabulary ".format(BERT_MODELS_DIRECTORY)
 
 
 BERT_MODEL_DIC = {"bert-cased-multitask": {#"vocab": os.path.join(BERT_MODELS_DIRECTORY, "bert-base-cased-vocab.txt"),

@@ -1,6 +1,5 @@
 from camembert_finetune.env.imports import torch, tqdm, Variable, pdb
 from camembert_finetune.io_.logger import printing, disable_tqdm_level
-
 from camembert_finetune.io_.dat.batch_generator import MaskBatch
 from camembert_finetune.io_.dat import conllu_data
 from camembert_finetune.model.settings import TASKS_PARAMETER
@@ -19,7 +18,7 @@ def data_gen_conllu(data, word_dictionary, char_dictionary,
 
     n_sents = data[3]
     nbatch = n_sents//batch_size
-    #pdb.set_trace()
+
     if nbatch == 0:
         printing("INFO : n_sents < batch_size so nbatch set to 1 ", verbose=verbose, verbose_level=0)
 
@@ -220,10 +219,7 @@ def data_gen_multi_task_sampling_batch(tasks, readers, word_dictionary, char_dic
                                        max_token_per_batch=None,
                                        print_raw=False, verbose=1):
     "multitask learning iterator"
-    #try:
     assert len(tasks) == len(readers)
-    #except Exception as e:
-    #    print(e)
     assert mode_batch_sampling in MODE_BATCH_SAMPLING_AVAILABLE
     iterator = {}
     end_task_flag = {}
