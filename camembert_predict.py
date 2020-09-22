@@ -42,14 +42,12 @@ def predict(args):
 
             detokenized_source_preprocessed, detokenized_label_batch, _ = detokenized_src_label(source_preprocessed, predict_dic, label_ls)
 
-
             # ASSUME BATCH len 1
             label_display = {"types": "Dependency LABELS", "heads": "Dependency HEADS", "ner": "NER"}
             if args.output_tokenized:
                 print(f"Camembert tokenized input {source_preprocessed['wordpieces_inputs_words'][0][1:-1]}")
                 for label, pred_label in zip(label_ls, predict_dic):
                     print(f"Camembert {label_display.get(label,label)} prediction: {predict_dic[pred_label][0][0][1:-1]}")
-
 
             print(f"You --> {detokenized_source_preprocessed['wordpieces_inputs_words'][0]}")
             for label, pred_label in zip(label_ls, predict_dic):

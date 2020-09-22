@@ -17,22 +17,22 @@ def make_bert_multitask(pretrained_model_dir, tasks, num_labels_per_task, init_a
     if pretrained_model_dir is not None and init_args_dir is None:
         raise(Exception("Not supported yet"))
         # hugly but handling specific heritage of XLMModel (should be made better!)
-        multitask_wrapper = BertMultiTask#BertMultiTaskXLM if encoder == "XLMModel" else BertMultiTask
-        printing("WARNING : as encoder is {} using {} ", var=["XLMModel", multitask_wrapper], verbose=1, verbose_level=1)
-        model = multitask_wrapper.from_pretrained(pretrained_model_dir, tasks=tasks, mask_id=mask_id,
-                                                  num_labels_per_task=num_labels_per_task, mapping_keys_state_dic=DIR_2_STAT_MAPPING[pretrained_model_dir],
-                                                  encoder=eval(encoder), dropout_classifier=args.dropout_classifier,
-                                                  hidden_dropout_prob=args.hidden_dropout_prob, random_init=False)
-        #pdb.set_trace()
+        #multitask_wrapper = BertMultiTask#BertMultiTaskXLM if encoder == "XLMModel" else BertMultiTask
+        #printing("WARNING : as encoder is {} using {} ", var=["XLMModel", multitask_wrapper], verbose=1, verbose_level=1)
+        #model = multitask_wrapper.from_pretrained(pretrained_model_dir, tasks=tasks, mask_id=mask_id,
+        #                                          num_labels_per_task=num_labels_per_task, mapping_keys_state_dic=DIR_2_STAT_MAPPING[pretrained_model_dir],
+        #                                          encoder=eval(encoder), dropout_classifier=args.dropout_classifier,
+        #                                          hidden_dropout_prob=args.hidden_dropout_prob, random_init=False)
+
     elif init_args_dir is not None:
         init_args_dir = get_init_args_dir(init_args_dir)
         args_checkpoint = json.load(open(init_args_dir, "r"))
         #assert "checkpoint_dir" in args_checkpoint, "ERROR checkpoint_dir not in {} ".format(args_checkpoint)
 
-        checkpoint_dir = args_checkpoint.get("checkpoint_dir")
-        if checkpoint_dir is None or not os.path.isfile(checkpoint_dir):
-            assert model_dir is not None
-            checkpoint_dir = model_dir+"/"+"checkpoint.pt"
+        #checkpoint_dir = args_checkpoint.get("checkpoint_dir")
+        #if checkpoint_dir is None or not os.path.isfile(checkpoint_dir):
+        assert model_dir is not None
+        checkpoint_dir = model_dir+"/"+"checkpoint.pt"
         assert os.path.isfile(checkpoint_dir), f"ERROR checkpoint file was not found {checkpoint_dir} "
         # redefining model and reloading
 
