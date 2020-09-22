@@ -74,8 +74,10 @@ To have more granular scores set `--score_details 1`
 
 NB : camembert supports CoNLL-U file: 
 - Word lines containing the annotation of a word/token in 10 fields separated by single tab characters; see below.
+    - POS and Name-Entities tags column 4
 - Blank lines marking sentence boundaries.
 - Comment lines starting with hash (#)
+  
 
 more details https://universaldependencies.org/format.html
 

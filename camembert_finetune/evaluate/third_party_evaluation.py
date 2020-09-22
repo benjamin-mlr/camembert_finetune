@@ -35,7 +35,7 @@ def evaluate_parsing(prediction_file, gold_file_name, dir_end_temp, task, verbos
     final_score = OrderedDict()
 
     dir = os.path.dirname(os.path.abspath(__file__))
-    script_eval_dir = os.path.join(dir, "conll18_ud_eval-modified.py")#-modified.py")
+    script_eval_dir = os.path.join(dir, "conll18_ud_eval.py")
     dir_end_temp = f"{dir_end_temp}/eval_temp_parse.txt"
     os.system(f"python {script_eval_dir} {gold_file_name} {prediction_file} -v > {dir_end_temp} ")
     # parsing report txt file to get the relevant score
